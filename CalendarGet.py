@@ -1,5 +1,5 @@
 # imports
-from ics import Calendar
+from icalendar import Calendar, Event
 import requests
 import os
 from datetime import datetime
@@ -73,3 +73,16 @@ if hash1 == hash2:
     print("nichts zu tun")
 if hash1 != hash2:
     print("der Kalender hat sich geändert!")
+
+# get all events
+cal_file = open("src/" + day + "/" + time + "/DHBW_cal.ics", "rb")
+cal = Calendar.from_ical(cal_file.read())
+
+for component in cal.subcomponents:
+    if component.name == "VEVENT":
+        summary = component.get("summary")
+        dtstart = component.get("dtstart").dt
+        dtend = component.get("dtend").dt
+        print(summary)
+        print(dtstart)
+        print(dtend)
