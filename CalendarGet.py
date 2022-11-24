@@ -2,7 +2,7 @@
 from icalendar import Calendar, Event
 import requests
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 import hashlib
 import shutil
@@ -60,9 +60,6 @@ timestamp = str(datetime.timestamp(now))
 
 open("src/" + day + "/" + time + "/timestamp.txt", "w").write(timestamp)
 
-# creates .txt with ics content
-open("src/" + day + "/" + time + "/calendar.txt", "w")
-
 # hardcoded hash compare for test (later better)
 with open("other_data/cal_hash.txt", encoding = "utf-8") as f:
     hash1 = f.read()
@@ -78,22 +75,34 @@ if hash1 == hash2:
 if hash1 != hash2:
     print("der Kalender hat sich geändert!")
 
+timestamp_week = datetime.timestamp(now) + 604800
+
 # get all events
 cal_file = open("src/" + day + "/" + time + "/DHBW_cal.ics", "rb")
 cal = Calendar.from_ical(cal_file.read())
 
+cal_new = Calendar()
+
 for component in cal.subcomponents:
     if component.name == "VEVENT":
         summary = component.get("summary")
-        dtstart = component.get("dtstart").dt
-        dtend = component.get("dtend").dt
+        dtstart = component.get("dtstart")
+        dtend = component.get("dtend")
+        location = component.get("location")
+
+        if location == "":
+            location = "Online"
 
         # compares time and save only events in future
-        if float(timestamp) <= datetime.timestamp(component.get("dtstart").dt): 
-            with open("src/" + day + "/" + time + "/calendar.txt", "a") as f:
-                f.write(summary + "\n")
-                f.write(str(dtstart) + "\n")
-                f.write(str(dtend) + "\n")
+        if float(timestamp) <= datetime.timestamp(component.get("dtstart").dt) < timestamp_week: 
+            with open("src/" + day + "/" + time + "/calendar.ics", "wb") as f:
+                event = Event()
+                event["SUMMARY"] = summary
+                event["dtstart"] = dtstart
+                event["dtend"] = dtend
+                event["LOCATION"] = location
+                cal_new.add_component(event)
+                f.write(cal_new.to_ical())
 
 #path = "src/24_11_2022/16_31_03"
 #shutil.rmtree(path)
