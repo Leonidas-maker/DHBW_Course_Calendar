@@ -38,6 +38,7 @@ except FileExistsError:
 # creates file "DHBW_cal.ics" in folder src
 open("src/" + day + "/" + time + "/DHBW_cal.ics", "wb").write(doc.content)
 
+# hash file and creates "cal_hash.txt"
 file = ("src/" + day + "/" + time + "/DHBW_cal.ics")
 BLOCK_SIZE = 65536
 
@@ -48,8 +49,12 @@ with open(file, "rb") as f:
         file_hash.update(fb)
         fb = f.read(BLOCK_SIZE)
 
-hash = file_hash.digest
-print(hash)
+hash = file_hash.hexdigest()
+print(hash) # for debugging
 
-open("src/" + day + "/" + time + "/DHBW_cal_hash.txt", "w").write(str(file_hash.copy))
-print(file_hash.hexdigest())
+open("src/" + day + "/" + time + "/cal_hash.txt", "w").write(hash)
+
+# creates file "timestamp"
+timestamp = str(datetime.timestamp(now))
+
+open("src/" + day + "/" + time + "/timestamp.txt", "w").write(timestamp)
