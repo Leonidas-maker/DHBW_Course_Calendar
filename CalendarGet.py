@@ -58,3 +58,18 @@ open("src/" + day + "/" + time + "/cal_hash.txt", "w").write(hash)
 timestamp = str(datetime.timestamp(now))
 
 open("src/" + day + "/" + time + "/timestamp.txt", "w").write(timestamp)
+
+# hardcoded hash compare for test (later better)
+with open("cal_hash.txt", encoding = "utf-8") as f:
+    hash1 = f.read()
+
+with open("src/24_11_2022/02_24_03/cal_hash.txt", encoding = "utf-8") as f:
+    hash2 = f.read()
+
+print(hash1) # for debugging
+print(hash2) # for debugging
+
+if hash1 == hash2:
+    print("nichts zu tun")
+if hash1 != hash2:
+    print("der Kalender hat sich geändert!")
