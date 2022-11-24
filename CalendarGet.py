@@ -5,6 +5,7 @@ import os
 from datetime import datetime
 import time
 import hashlib
+import shutil
 
 # url to download ics file
 url = "http://vorlesungsplan.dhbw-mannheim.de/ical.php?uid=8537001"
@@ -59,11 +60,14 @@ timestamp = str(datetime.timestamp(now))
 
 open("src/" + day + "/" + time + "/timestamp.txt", "w").write(timestamp)
 
+# creates .txt with ics content
+open("src/" + day + "/" + time + "/calendar.txt", "w")
+
 # hardcoded hash compare for test (later better)
-with open("cal_hash.txt", encoding = "utf-8") as f:
+with open("other_data/cal_hash.txt", encoding = "utf-8") as f:
     hash1 = f.read()
 
-with open("src/24_11_2022/02_24_03/cal_hash.txt", encoding = "utf-8") as f:
+with open("src/" + day + "/" + time + "/cal_hash.txt", encoding = "utf-8") as f:
     hash2 = f.read()
 
 print(hash1) # for debugging
@@ -83,6 +87,13 @@ for component in cal.subcomponents:
         summary = component.get("summary")
         dtstart = component.get("dtstart").dt
         dtend = component.get("dtend").dt
-        print(summary)
-        print(dtstart)
-        print(dtend)
+
+        # compares time and save only events in future
+        if float(timestamp) <= datetime.timestamp(component.get("dtstart").dt): 
+            with open("src/" + day + "/" + time + "/calendar.txt", "a") as f:
+                f.write(summary + "\n")
+                f.write(str(dtstart) + "\n")
+                f.write(str(dtend) + "\n")
+
+#path = "src/24_11_2022/16_31_03"
+#shutil.rmtree(path)
