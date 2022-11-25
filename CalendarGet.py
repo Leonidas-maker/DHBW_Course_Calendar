@@ -13,6 +13,10 @@ url = "http://vorlesungsplan.dhbw-mannheim.de/ical.php?uid=8537001"
 # save content in doc
 doc = requests.get(url)
 
+#saves old path
+with open("tmp/past_path.txt", "r") as f:
+    past_path = f.read()
+
 # gets todays date and new format
 now = datetime.now()
 
@@ -104,5 +108,8 @@ for component in cal.subcomponents:
                 cal_new.add_component(event)
                 f.write(cal_new.to_ical())
 
+open("tmp/past_path.txt", "w").write("src/" + day + "/" + time + "/cal_hash.txt")
+
+#print(past_path)
 #path = "src/24_11_2022/16_31_03"
 #shutil.rmtree(path)
