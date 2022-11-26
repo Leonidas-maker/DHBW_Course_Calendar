@@ -147,4 +147,3 @@ shutil.rmtree(past_path)
 print("Directory " + past_path + " removed")
 
 open("tmp/past_path.txt", "w").write("src/" + time)
-
