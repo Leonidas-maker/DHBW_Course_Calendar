@@ -18,19 +18,16 @@ doc = requests.get(url)
 with open("tmp/past_path.txt", "r") as f:
     past_path = f.read()
 
-print(past_path)
-
 # gets todays date and new format
 now = datetime.now()
 week = now + timedelta(days=7)
 
 time = now.strftime("%H_%M_%S")
-print(time)
 
 #creates time folder
 try:
     os.mkdir("src/" + time)
-    print("Directory " + time + " Created")
+    print("Directory " + time + " created")
 except FileExistsError:
     print("Directory " + time + " already exists")
 
@@ -49,7 +46,6 @@ with open(file, "rb") as f:
         fb = f.read(BLOCK_SIZE)
 
 hash = file_hash.hexdigest()
-print(hash) # for debugging
 
 open("src/" + time + "/cal_hash.txt", "w").write(hash)
 
@@ -65,9 +61,6 @@ with open(past_path + "/cal_hash.txt", encoding = "utf-8") as f:
 with open("src/" + time + "/cal_hash.txt", encoding = "utf-8") as f:
     new_hash = f.read()
 
-print(old_hash) # for debugging
-print(new_hash) # for debugging
-
 if old_hash == new_hash:
     print("nichts zu tun")
 if old_hash != new_hash:
@@ -78,6 +71,8 @@ timestamp_week = datetime.timestamp(now) + 604800
 # get all events
 cal_file = open("src/" + time + "/DHBW_cal.ics", "rb")
 cal = Calendar.from_ical(cal_file.read())
+
+cal_file.close()
 
 cal_new = Calendar()
 
@@ -107,6 +102,9 @@ old_ics_file = open(past_path + "/calendar.ics", "rb")
 
 new_icsCalender = Calendar.from_ical(new_ics_file.read())
 old_icsCalender = Calendar.from_ical(old_ics_file.read())
+
+new_ics_file.close()
+old_ics_file.close()
 
 current = now.strftime("%Y%m%dT%H%M%SZ")
 week_time = week.strftime("%Y%m%dT%H%M%SZ")
@@ -146,4 +144,7 @@ while i < new_count:
 
 shutil.rmtree(past_path)
 
+print("Directory " + past_path + " removed")
+
 open("tmp/past_path.txt", "w").write("src/" + time)
+
