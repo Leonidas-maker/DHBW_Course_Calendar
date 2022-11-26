@@ -3,9 +3,10 @@ from icalendar import Calendar, Event
 import requests
 import os
 from datetime import datetime, timedelta
-import time
+import time as t
 import hashlib
 import shutil
+import recurring_ical_events
 
 # url to download ics file
 url = "http://vorlesungsplan.dhbw-mannheim.de/ical.php?uid=8537001"
@@ -17,34 +18,27 @@ doc = requests.get(url)
 with open("tmp/past_path.txt", "r") as f:
     past_path = f.read()
 
+print(past_path)
+
 # gets todays date and new format
 now = datetime.now()
-
-day = now.strftime("%d_%m_%Y")
-print(day)
+week = now + timedelta(days=7)
 
 time = now.strftime("%H_%M_%S")
 print(time)
 
-#creates day folder
-try:
-    os.mkdir("src/" + day)
-    print("Directory " + day + " Created")
-except FileExistsError:
-    print("Directory " + day + " already exists")
-
 #creates time folder
 try:
-    os.mkdir("src/" + day + "/" + time)
+    os.mkdir("src/" + time)
     print("Directory " + time + " Created")
 except FileExistsError:
     print("Directory " + time + " already exists")
 
 # creates file "DHBW_cal.ics" in folder src
-open("src/" + day + "/" + time + "/DHBW_cal.ics", "wb").write(doc.content)
+open("src/" + time + "/DHBW_cal.ics", "wb").write(doc.content)
 
 # hash file and creates "cal_hash.txt"
-file = ("src/" + day + "/" + time + "/DHBW_cal.ics")
+file = ("src/" + time + "/DHBW_cal.ics")
 BLOCK_SIZE = 65536
 
 file_hash = hashlib.sha256()
@@ -57,32 +51,32 @@ with open(file, "rb") as f:
 hash = file_hash.hexdigest()
 print(hash) # for debugging
 
-open("src/" + day + "/" + time + "/cal_hash.txt", "w").write(hash)
+open("src/" + time + "/cal_hash.txt", "w").write(hash)
 
 # creates file "timestamp"
 timestamp = str(datetime.timestamp(now))
 
-open("src/" + day + "/" + time + "/timestamp.txt", "w").write(timestamp)
+open("src/" + time + "/timestamp.txt", "w").write(timestamp)
 
 # hardcoded hash compare for test (later better)
-with open("other_data/cal_hash.txt", encoding = "utf-8") as f:
-    hash1 = f.read()
+with open(past_path + "/cal_hash.txt", encoding = "utf-8") as f: 
+    old_hash = f.read()
 
-with open("src/" + day + "/" + time + "/cal_hash.txt", encoding = "utf-8") as f:
-    hash2 = f.read()
+with open("src/" + time + "/cal_hash.txt", encoding = "utf-8") as f:
+    new_hash = f.read()
 
-print(hash1) # for debugging
-print(hash2) # for debugging
+print(old_hash) # for debugging
+print(new_hash) # for debugging
 
-if hash1 == hash2:
+if old_hash == new_hash:
     print("nichts zu tun")
-if hash1 != hash2:
+if old_hash != new_hash:
     print("der Kalender hat sich geändert!")
 
 timestamp_week = datetime.timestamp(now) + 604800
 
 # get all events
-cal_file = open("src/" + day + "/" + time + "/DHBW_cal.ics", "rb")
+cal_file = open("src/" + time + "/DHBW_cal.ics", "rb")
 cal = Calendar.from_ical(cal_file.read())
 
 cal_new = Calendar()
@@ -99,7 +93,7 @@ for component in cal.subcomponents:
 
         # compares time and save only events in future
         if float(timestamp) <= datetime.timestamp(component.get("dtstart").dt) < timestamp_week: 
-            with open("src/" + day + "/" + time + "/calendar.ics", "wb") as f:
+            with open("src/" + time + "/calendar.ics", "wb") as f:
                 event = Event()
                 event["SUMMARY"] = summary
                 event["dtstart"] = dtstart
@@ -108,8 +102,48 @@ for component in cal.subcomponents:
                 cal_new.add_component(event)
                 f.write(cal_new.to_ical())
 
-open("tmp/past_path.txt", "w").write("src/" + day + "/" + time + "/cal_hash.txt")
+new_ics_file = open("src/" + time + "/calendar.ics", "rb")
+old_ics_file = open(past_path + "/calendar.ics", "rb")
 
-#print(past_path)
-#path = "src/24_11_2022/16_31_03"
-#shutil.rmtree(path)
+new_icsCalender = Calendar.from_ical(new_ics_file.read())
+old_icsCalender = Calendar.from_ical(old_ics_file.read())
+
+current = now.strftime("%Y%m%dT%H%M%SZ")
+week_time = week.strftime("%Y%m%dT%H%M%SZ")
+
+events = recurring_ical_events.of(new_icsCalender).between(current, week_time)
+
+new_L = []
+old_L = []
+new_count = 0
+old_count = 0
+
+for event in events:
+    summary = event["SUMMARY"]
+    start = event["DTSTART"].dt
+    duration = event["DTEND"].dt - event["DTSTART"].dt
+    location = event["LOCATION"]
+    new_L.append("{}; {}; {}; {}".format(start, duration, summary, location))
+    new_count = new_count + 1
+
+events = recurring_ical_events.of(old_icsCalender).between(current, week_time)
+
+for event in events:
+    summary = event["SUMMARY"]
+    start = event["DTSTART"].dt
+    duration = event["DTEND"].dt - event["DTSTART"].dt
+    location = event["LOCATION"]
+    old_L.append("{}; {}; {}; {}".format(start, duration, summary, location))
+    old_count = old_count + 1
+
+i = 0
+
+while i < new_count:
+    if old_L[i] != new_L[i]:
+        change = new_L[i] + "\n"
+        open("src/" + time + "/change.txt", "a").write(change)
+    i = i + 1
+
+shutil.rmtree(past_path)
+
+open("tmp/past_path.txt", "w").write("src/" + time)
